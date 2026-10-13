@@ -5,7 +5,7 @@ Mapa interativo das regiões do servidor **Primera** do [E-SIM](https://primera.
 **Site:** https://matheuspio10.github.io/esim-fronteiras/
 
 ## O que dá pra ver
-- **Ocupações** — escolha um país e veja as regiões que ele domina sem ser o dono legítimo (ou as dele que estão com outros) e, para cada uma, as regiões que fazem ponte com ela. Link direto: `#ocupa=Spain` ou `#perdeu=France`.
+- **Ocupações** — escolha um país e veja as regiões que ele domina sem ser o dono legítimo (ou as dele que estão com outros) e, para cada uma, as regiões que fazem ponte com ela. Link direto: `#ocupa=Spain` ou `#perdeu=France`. O botão **Baixar links para abrir RW** gera um arquivo (.txt ou .html) com o link de cada região ocupada no jogo.
 - **Região** — dono atual e legítimo, recurso e todos os vizinhos.
 - **País** — regiões atacáveis, regiões de fronteira (pontes), regiões-chave do território, ocupações.
 - **Rota** — caminho com menos conquistas (ou menos saltos) de um país/região até um destino, com aliados.

@@ -174,6 +174,8 @@ const edges=D.edges;
 
 document.getElementById('meta').textContent=`${N} regiões · ${edges.length} fronteiras · ${owners.length} países com território · dados coletados em ${D.date}`;
 document.getElementById('regList').innerHTML=R.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<option value="${esc(r.name)} #${r.id}">`).join('');
+const GAME='https://primera.e-sim.org/region.html?id=';
+function downloadFile(name,text,type){const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function findRegion(q){
   q=(q||'').trim(); if(!q) return -1;
   const m=q.match(/#?(\d+)\s*$/); if(m&&byId.has(+m[1])) return byId.get(+m[1]).i;
@@ -596,6 +598,8 @@ function renderOcup(){
   const bOrder=Object.keys(bByOwner).sort((a,b)=>(b===c)-(a===c)||bByOwner[b].length-bByOwner[a].length||a.localeCompare(b)).filter(o=>!(ocHideOwn&&o===c));
   const n=regs.length, g=gOrder.length;
   let h=`<div class="card"><div class="rhead"><h2>${cdot(c)}</h2><button class="btn sec" id="ocCopy" style="margin-left:auto">Copiar lista</button></div>
+   <div class="row" style="margin-top:8px"><button class="btn" id="ocRW">⬇ Baixar links para abrir RW (.txt)</button><a class="rg" id="ocRWh" style="font-size:12px">ou versão .html com links clicáveis</a></div>
+   <p class="hint" style="margin:2px 0 0">Todas as ${n} regiões abaixo estão com dono atual ≠ dono legítimo, ou seja, são as que podem receber RW. Confira na página da região no jogo se já não há uma batalha em andamento.</p>
    <div class="stats"><div><b>${n}</b><small>${ocMode==='ocupa'?'regiões ocupadas':'regiões perdidas'}</small></div><div><b>${g}</b><small>${ocMode==='ocupa'?'donos legítimos':'países ocupantes'}</small></div><div><b>${flagged}</b><small>${ocMode==='ocupa'?'na linha de frente':`com fronteira com ${esc(c)}`}</small></div></div>
    <div class="verdict">${ocMode==='ocupa'
      ?`${esc(c)} domina <b>${n}</b> regiões que não são legitimamente suas, de <b>${g}</b> países. <b>${flagged}</b> estão na linha de frente (encostam em outro país); ${n-flagged} estão cercadas só por território de ${esc(c)}.`
@@ -604,13 +608,27 @@ function renderOcup(){
   gOrder.forEach(k=>{
     h+=`<h3>${ocMode==='ocupa'?'Legítimas de':'Ocupadas por'} ${cdot(k)} (${groups[k].length})</h3>`;
     groups[k].sort((a,b)=>R[a].name.localeCompare(R[b].name)).forEach(i=>{const L=nbList(i);
-      h+=`<div class="oc" data-oci="${i}"><div class="t"><b data-oc="${i}">${esc(R[i].name)}</b>${R[i].res?resB(R[i].res):''}${R[i].capital?`<span class="badge b-pur">capital de ${esc(R[i].capital)}</span>`:''}${status(i)}<a class="rg" data-r="${i}" style="margin-left:auto;font-size:11px">detalhes</a></div>
+      h+=`<div class="oc" data-oci="${i}"><div class="t"><b data-oc="${i}">${esc(R[i].name)}</b>${R[i].res?resB(R[i].res):''}${R[i].capital?`<span class="badge b-pur">capital de ${esc(R[i].capital)}</span>`:''}${status(i)}<span style="margin-left:auto;font-size:11px;white-space:nowrap"><a class="rg" href="${GAME}${R[i].id}" target="_blank" rel="noopener">abrir no jogo ↗</a> · <a class="rg" data-r="${i}">detalhes</a></span></div>
         <div class="nbs"><span class="hint">Faz ponte com (${L.length}):</span><br>${L.map(pill).join('')||'<span class="hint">—</span>'}</div></div>`;});
   });
   h+=`<h3>Regiões-ponte de fora da lista (${bOrder.reduce((s,o)=>s+bByOwner[o].length,0)})</h3><p class="hint">Regiões que não estão entre as ${ocMode==='ocupa'?'ocupadas':'perdidas'}, mas encostam em pelo menos uma delas — agrupadas pelo dono atual.</p>
    <table><tr><th>Região-ponte</th><th>Encosta em</th></tr>${bOrder.map(o=>`<tr class="grp"><td colspan="2">${cdot(o)}${o===c?' (próprio país)':''} — ${bByOwner[o].length}</td></tr>`+bByOwner[o].sort((a,b)=>R[a].name.localeCompare(R[b].name)).map(v=>`<tr><td><a class="rg" data-oc="${v}">${esc(R[v].name)}</a>${R[v].res?' '+resB(R[v].res):''}</td><td>${bridges.get(v).map(i=>`<a class="rg" data-oc="${i}">${esc(R[i].name)}</a>`).join(', ')}</td></tr>`).join('')).join('')}</table>`;
   out.innerHTML=h;
   document.getElementById('ocAll').onclick=()=>{P.ocup.querySelectorAll('.oc.sel').forEach(x=>x.classList.remove('sel')); view=ocView(regs); fit(view.focus);};
+  const rwTitle=ocMode==='ocupa'?`Regiões para abrir RW — ocupadas por ${c}`:`Regiões para abrir RW — legítimas de ${c}, ocupadas por outros`;
+  const rwFile=`RW_${c.replace(/[^\w]+/g,'_')}_${ocMode==='ocupa'?'ocupadas':'perdidas'}_${D.date}`;
+  document.getElementById('ocRW').onclick=()=>{
+    const L=[rwTitle,`Dados de ${D.date} — os donos mudam com as guerras; confira no jogo antes.`,`${n} regiões`,''];
+    gOrder.forEach(k=>{L.push(`[${ocMode==='ocupa'?'Legítimas de':'Ocupadas por'} ${k}] (${groups[k].length})`);
+      groups[k].forEach(i=>L.push(`${R[i].name}${R[i].res?' ('+(RESN[R[i].res]||R[i].res)+')':''} — ${GAME}${R[i].id}`)); L.push('');});
+    L.push('--- Só os links ---'); gOrder.forEach(k=>groups[k].forEach(i=>L.push(GAME+R[i].id)));
+    downloadFile(rwFile+'.txt','\ufeff'+L.join('\r\n'),'text/plain;charset=utf-8');
+  };
+  document.getElementById('ocRWh').onclick=()=>{
+    const body=gOrder.map(k=>`<h2>${ocMode==='ocupa'?'Legítimas de':'Ocupadas por'} ${esc(k)} (${groups[k].length})</h2><ul>${groups[k].map(i=>`<li><a href="${GAME}${R[i].id}" target="_blank" rel="noopener">${esc(R[i].name)}</a>${R[i].res?` <small>(${RESN[R[i].res]||esc(R[i].res)})</small>`:''}${R[i].capital?` <small>· capital de ${esc(R[i].capital)}</small>`:''}</li>`).join('')}</ul>`).join('');
+    const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(rwTitle)}</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:760px;margin:24px auto;padding:0 16px;color:#444A5A;background:#fff}h1{color:#1A2540;font-size:20px}h2{color:#1A2540;font-size:15px;border-bottom:1px solid #D8DCE4;padding-bottom:4px;margin-top:22px}a{color:#2563EB}li{margin:3px 0}small{color:#8B92A4}.meta{color:#8B92A4;font-size:13px}</style></head><body><h1>${esc(rwTitle)}</h1><p class="meta">${n} regiões · dados de ${D.date} — os donos mudam com as guerras; confira no jogo antes.</p>${body}</body></html>`;
+    downloadFile(rwFile+'.html',html,'text/html;charset=utf-8');
+  };
   document.getElementById('ocCopy').onclick=e=>{
     const lines=[`${c} — ${ocMode==='ocupa'?`${n} regiões ocupadas (dono atual ≠ legítimo)`:`${n} regiões legítimas ocupadas por outros`} · dados de ${D.date}`];
     gOrder.forEach(k=>{lines.push('',`[${ocMode==='ocupa'?'Legítimas de':'Ocupadas por'} ${k}]`);
