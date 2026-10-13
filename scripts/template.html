@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E-SIM Fronteiras</title>
+<style>
+:root{--navy:#1A2540;--bg:#F2F4F8;--border:#D8DCE4;--text:#444A5A;--muted:#8B92A4;--ok:#1B9E4B;--okbg:#E6F4EC;--warn:#E0A800;--warnbg:#FFF7E0;--bad:#C62828;--badbg:#FCEBEB;--purple:#7C3AED;--purplebg:#F1EBFF;--blue:#2563EB;--bluebg:#EBF1FF;--orange:#EA580C;--orangebg:#FFEDD5}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);background:var(--bg)}
+header{background:linear-gradient(135deg,#1A2540,#2E3E6B);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-height:56px}
+header h1{font-size:17px;margin:0;letter-spacing:.2px}
+header .meta{font-size:12px;opacity:.75}
+header input{margin-left:auto;width:280px;max-width:100%;padding:7px 10px;border-radius:6px;border:0;font:inherit}
+.app{display:grid;grid-template-columns:420px 1fr;height:calc(100vh - 56px)}
+aside{background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;border-bottom:1px solid var(--border)}
+.tabs button{flex:1;border:0;background:none;padding:10px 2px;font:600 12px system-ui,sans-serif;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.tabs button.active{color:var(--navy);border-color:var(--purple)}
+.panel{overflow:auto;padding:14px 16px 30px;flex:1;display:none}
+.panel.active{display:block}
+main{position:relative;min-height:0;overflow:hidden;background:#EEF1F6}
+canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+canvas.drag{cursor:grabbing}
+h2{font-size:18px;color:var(--navy);margin:0}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--navy);margin:18px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.hint{color:var(--muted);font-size:12px}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px}
+.rhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.rhead .id{color:var(--muted)}
+.rhead a.ext{margin-left:auto;font-size:12px;color:var(--blue)}
+.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.kv div{background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 8px}
+.kv small{display:block;color:var(--muted);font-size:11px}
+.kv b{color:var(--navy)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stats div{background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 8px;text-align:center}
+.stats b{display:block;font-size:18px;color:var(--navy)}
+.stats small{color:var(--muted);font-size:11px}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px}
+.b-ok{background:var(--okbg);color:var(--ok)}.b-warn{background:var(--warnbg);color:#8a6700}.b-bad{background:var(--badbg);color:var(--bad)}.b-pur{background:var(--purplebg);color:var(--purple)}.b-blue{background:var(--bluebg);color:var(--blue)}.b-or{background:var(--orangebg);color:var(--orange)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 5px;border:1px solid var(--border);border-radius:99px;background:#fff;cursor:pointer;margin:0 4px 4px 0;font-size:12px;white-space:nowrap}
+.chip:hover{border-color:var(--navy)}
+.chip i,.dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.chip .n{color:var(--muted);font-size:11px}
+.chip .x{color:var(--bad);font-weight:700;margin-left:2px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;padding:4px 4px;border-bottom:1px solid var(--border);position:sticky;top:-14px;background:#fff}
+td{padding:4px 4px;border-bottom:1px solid #EEF0F4;vertical-align:top}
+tr.grp td{background:var(--bg);font-weight:600;color:var(--navy);padding-top:6px}
+a.rg{color:var(--blue);cursor:pointer;text-decoration:none}
+a.rg:hover{text-decoration:underline}
+.res{font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;color:#fff;white-space:nowrap}
+.tag{font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;background:var(--orangebg);color:var(--orange)}
+.tag.own{background:var(--okbg);color:var(--ok)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.row label{font-size:12px;color:var(--muted);min-width:70px}
+select,input[type=text],input[list]{font:inherit;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);flex:1;min-width:0}
+button.btn{font:600 12px system-ui,sans-serif;padding:7px 12px;border-radius:6px;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer}
+button.btn.sec{background:#fff;color:var(--navy)}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:5px 10px;font:600 12px system-ui,sans-serif;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--navy);color:#fff}
+.verdict{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--purplebg);border-left:4px solid var(--purple);color:var(--navy);font-size:12.5px}
+ol.path{padding-left:22px;margin:8px 0}
+ol.path li{padding:3px 0}
+.pair{border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fff}
+.pair>.ph{display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer}
+.pair>.ph .cnt{margin-left:auto;font-weight:700;color:var(--navy)}
+.pair.open{border-color:var(--purple)}
+.pair .pb{display:none;padding:0 8px 8px}
+.pair.open .pb{display:block}
+.toolbar{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+.toolbar>*{pointer-events:auto}
+.tb{background:rgba(255,255,255,.95);border:1px solid var(--border);border-radius:8px;padding:4px;display:flex;gap:4px;align-items:center;box-shadow:0 1px 4px rgba(26,37,64,.08)}
+.tb button{border:0;background:none;padding:5px 9px;border-radius:5px;font:600 12px system-ui,sans-serif;color:var(--text);cursor:pointer}
+.tb button.on{background:var(--navy);color:#fff}
+.tb button:hover:not(.on){background:var(--bg)}
+.legend{position:absolute;left:10px;bottom:10px;max-height:45%;width:230px;overflow:auto;background:rgba(255,255,255,.95);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 1px 4px rgba(26,37,64,.08)}
+.legend .li{display:flex;align-items:center;gap:6px;padding:1px 0;cursor:pointer}
+.legend .li:hover{color:var(--navy);font-weight:600}
+.legend .li .n{margin-left:auto;color:var(--muted)}
+.legend.hide .body{display:none}
+.legend .lt{font-weight:700;color:var(--navy);cursor:pointer;display:flex;justify-content:space-between}
+#tip{position:absolute;pointer-events:none;background:var(--navy);color:#fff;padding:6px 9px;border-radius:6px;font-size:12px;display:none;max-width:260px;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+#tip small{opacity:.75}
+.help{position:absolute;right:10px;bottom:10px;font-size:11px;color:var(--muted);background:rgba(255,255,255,.85);padding:4px 8px;border-radius:6px}
+@media (max-width:860px){
+ .app{grid-template-columns:1fr;grid-template-rows:62vh auto;height:auto}
+ main{order:-1;height:62vh}
+ aside{border-right:0;border-top:1px solid var(--border)}
+ .panel{max-height:none}
+ header input{margin-left:0;width:100%}
+ .legend{width:170px;max-height:35%}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>E-SIM Primera — Mapa de Fronteiras</h1>
+    <div class="meta" id="meta"></div>
+  </div>
+  <input list="regList" id="gsearch" placeholder="Buscar região… (nome ou #id)" autocomplete="off">
+</header>
+<datalist id="regList"></datalist>
+<div class="app">
+  <aside>
+    <nav class="tabs">
+      <button data-tab="reg" class="active">Região</button>
+      <button data-tab="pais">País</button>
+      <button data-tab="rota">Rota</button>
+      <button data-tab="front">Fronteiras</button>
+      <button data-tab="crit">Pontos críticos</button>
+    </nav>
+    <section class="panel active" id="p-reg"></section>
+    <section class="panel" id="p-pais"></section>
+    <section class="panel" id="p-rota"></section>
+    <section class="panel" id="p-front"></section>
+    <section class="panel" id="p-crit"></section>
+  </aside>
+  <main id="main">
+    <canvas id="cv"></canvas>
+    <div class="toolbar">
+      <div class="tb" id="colorMode">
+        <button data-m="owner" class="on">Dono atual</button>
+        <button data-m="rightful">Dono legítimo</button>
+        <button data-m="res">Recurso</button>
+      </div>
+      <div class="tb">
+        <button id="bFit" title="Enquadrar o mapa">Enquadrar</button>
+        <button id="bClear" title="Limpar destaque">Limpar</button>
+        <button id="bLabels" title="Mostrar todos os nomes">Nomes</button>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="help">arraste = mover · roda = zoom · clique = selecionar</div>
+    <div id="tip"></div>
+  </main>
+</div>
+<script>
+const D = /*__DATA__*/null;
+// ---------- dados ----------
+const R = D.regions.map((a,i)=>({i,id:a[0],name:a[1],owner:a[2],rightful:a[3],capital:a[4],res:a[5],pop:a[6],x:a[7],y:a[8],nb:[]}));
+D.edges.forEach(([a,b])=>{R[a].nb.push(b);R[b].nb.push(a);});
+const N=R.length, byId=new Map(R.map(r=>[r.id,r]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ownCount={}; R.forEach(r=>ownCount[r.owner]=(ownCount[r.owner]||0)+1);
+const owners=Object.keys(ownCount).sort((a,b)=>ownCount[b]-ownCount[a]||a.localeCompare(b));
+const allC=[...new Set(R.flatMap(r=>[r.owner,r.rightful]))];
+const ordered=[...owners,...allC.filter(c=>!ownCount[c]).sort()];
+const COL={}; ordered.forEach((c,k)=>{const h=(k*137.508+200)%360,s=[68,55,78,48][k%4],l=[46,58,38,52][(k>>2)%4];COL[c]=`hsl(${h.toFixed(0)},${s}%,${l}%)`;});
+const RESC={iron:'#6B7280',grain:'#D99A00',oil:'#1A2540',minerals:'#7C3AED',wood:'#1B9E4B',stone:'#A16207'};
+const RESN={iron:'Ferro',grain:'Grãos',oil:'Petróleo',minerals:'Minerais',wood:'Madeira',stone:'Pedra'};
+const resB=r=>r?`<span class="res" style="background:${RESC[r]||'#888'}">${RESN[r]||esc(r)}</span>`:'<span class="hint">—</span>';
+const chip=(c,n)=>`<span class="chip" data-c="${esc(c)}"><i style="background:${COL[c]}"></i>${esc(c)}${n!=null?` <span class="n">${n}</span>`:''}</span>`;
+const rl=i=>`<a class="rg" data-r="${i}">${esc(R[i].name)}</a>`;
+const cdot=c=>`<span class="dot" style="background:${COL[c]}"></span> ${esc(c)}`;
+const edges=D.edges;
+
+document.getElementById('meta').textContent=`${N} regiões · ${edges.length} fronteiras · ${owners.length} países com território · dados coletados em ${D.date}`;
+document.getElementById('regList').innerHTML=R.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<option value="${esc(r.name)} #${r.id}">`).join('');
+function findRegion(q){
+  q=(q||'').trim(); if(!q) return -1;
+  const m=q.match(/#?(\d+)\s*$/); if(m&&byId.has(+m[1])) return byId.get(+m[1]).i;
+  const l=q.toLowerCase();
+  let r=R.find(r=>r.name.toLowerCase()===l)||R.find(r=>r.name.toLowerCase().startsWith(l))||R.find(r=>r.name.toLowerCase().includes(l));
+  return r?r.i:-1;
+}
+
+// ---------- algoritmos ----------
+function tarjan(members){
+  const inS=new Uint8Array(N); members.forEach(i=>inS[i]=1);
+  const disc=new Int32Array(N).fill(-1), low=new Int32Array(N); let t=0;
+  const ap=new Set(), br=[];
+  function dfs(u,p){disc[u]=low[u]=t++; let ch=0;
+    for(const v of R[u].nb){ if(!inS[v]) continue;
+      if(disc[v]<0){ch++; dfs(v,u); low[u]=Math.min(low[u],low[v]);
+        if(p>=0&&low[v]>=disc[u]) ap.add(u);
+        if(low[v]>disc[u]) br.push([u,v]);}
+      else if(v!==p) low[u]=Math.min(low[u],disc[v]);}
+    if(p<0&&ch>1) ap.add(u);}
+  members.forEach(u=>{if(disc[u]<0) dfs(u,-1);});
+  return {ap,br};
+}
+function components(members, skipNode=-1, skipEdge=null){
+  const inS=new Uint8Array(N); members.forEach(i=>{if(i!==skipNode) inS[i]=1;});
+  const seen=new Uint8Array(N), out=[];
+  for(const s of members){ if(!inS[s]||seen[s]) continue;
+    const comp=[s]; seen[s]=1;
+    for(let k=0;k<comp.length;k++){const u=comp[k];
+      for(const v of R[u].nb){ if(!inS[v]||seen[v]) continue;
+        if(skipEdge&&((u===skipEdge[0]&&v===skipEdge[1])||(u===skipEdge[1]&&v===skipEdge[0]))) continue;
+        seen[v]=1; comp.push(v);}}
+    out.push(comp);}
+  return out.sort((a,b)=>b.length-a.length);
+}
+const ALL=R.map(r=>r.i);
+const GLOBAL=tarjan(ALL);
+const terrAP={}; // por país: regiões cuja perda divide o território
+owners.forEach(c=>{terrAP[c]=tarjan(R.filter(r=>r.owner===c).map(r=>r.i)).ap;});
+// Dijkstra simples (N≈1000): custo = 1000 por região a conquistar + 1 por salto
+function dijkstra(sources, side, mode){
+  const dist=new Float64Array(N).fill(Infinity), prev=new Int32Array(N).fill(-1), done=new Uint8Array(N);
+  sources.forEach(s=>dist[s]=0);
+  for(;;){ let u=-1,b=Infinity; for(let i=0;i<N;i++) if(!done[i]&&dist[i]<b){b=dist[i];u=i;}
+    if(u<0) break; done[u]=1;
+    for(const v of R[u].nb){ const w=mode==='hops'?1:(side.has(R[v].owner)?1:1001);
+      if(dist[u]+w<dist[v]){dist[v]=dist[u]+w; prev[v]=u;}}}
+  return {dist,prev};
+}
+
+// ---------- canvas ----------
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d'), mainEl=document.getElementById('main'), tip=document.getElementById('tip');
+let W=0,H=0,dpr=1, cam={x:0,y:0,s:10}, colorMode='owner', allLabels=false, view=null, hover=-1;
+let userMoved=false;
+function resize(){dpr=window.devicePixelRatio||1; W=mainEl.clientWidth; H=mainEl.clientHeight; cv.width=W*dpr; cv.height=H*dpr; if(!userMoved&&W&&H) fit(view?view.focus:ALL,view?60:30); else redraw();}
+let raf=0; function redraw(){ if(!raf) raf=requestAnimationFrame(()=>{raf=0; draw();}); }
+const nodeColor=r=>colorMode==='res'?(r.res?RESC[r.res]:'#C9CED8'):COL[colorMode==='owner'?r.owner:r.rightful];
+function fit(idx, pad=60){
+  if(!idx||!idx.length) idx=ALL;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  idx.forEach(i=>{const r=R[i]; x0=Math.min(x0,r.x); y0=Math.min(y0,r.y); x1=Math.max(x1,r.x); y1=Math.max(y1,r.y);});
+  const w=Math.max(x1-x0,4), h=Math.max(y1-y0,4);
+  cam.x=(x0+x1)/2; cam.y=(y0+y1)/2; cam.s=Math.min((W-pad*2)/w,(H-pad*2-40)/h, 45);
+  redraw();
+}
+const sx=r=>(r.x-cam.x)*cam.s+W/2, sy=r=>(r.y-cam.y)*cam.s+H/2;
+function draw(){
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.fillStyle='#EEF1F6'; ctx.fillRect(0,0,W,H);
+  const s=cam.s, rad=Math.max(2.6,Math.min(12,s*0.28));
+  // arestas internas e entre países
+  ctx.lineWidth=1;
+  ctx.strokeStyle=view?'rgba(139,146,164,.10)':'rgba(139,146,164,.40)'; ctx.beginPath();
+  for(const [a,b] of edges){ if(R[a].owner!==R[b].owner) continue; ctx.moveTo(sx(R[a]),sy(R[a])); ctx.lineTo(sx(R[b]),sy(R[b])); }
+  ctx.stroke();
+  ctx.strokeStyle=view?'rgba(68,74,90,.12)':'rgba(68,74,90,.55)'; ctx.setLineDash([3,3]); ctx.beginPath();
+  for(const [a,b] of edges){ if(R[a].owner===R[b].owner) continue; ctx.moveTo(sx(R[a]),sy(R[a])); ctx.lineTo(sx(R[b]),sy(R[b])); }
+  ctx.stroke(); ctx.setLineDash([]);
+  if(view&&view.edges){ for(const [a,b,c,w] of view.edges){ ctx.strokeStyle=c; ctx.lineWidth=w||2.5; ctx.beginPath(); ctx.moveTo(sx(R[a]),sy(R[a])); ctx.lineTo(sx(R[b]),sy(R[b])); ctx.stroke(); } }
+  // nós
+  for(const r of R){
+    const x=sx(r), y=sy(r); if(x<-20||y<-20||x>W+20||y>H+20) continue;
+    const v=view?view.nodes.get(r.i):null;
+    ctx.globalAlpha=(view&&!v)?0.16:1;
+    ctx.beginPath(); ctx.arc(x,y,rad,0,7); ctx.fillStyle=(v&&v.fill)||nodeColor(r); ctx.fill();
+    if(colorMode==='owner'&&r.owner!==r.rightful&&rad>4.5&&!(v&&v.fill)){ctx.lineWidth=2; ctx.strokeStyle=COL[r.rightful]; ctx.beginPath(); ctx.arc(x,y,rad+2,0,7); ctx.stroke();}
+    if(r.capital){ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(x,y,Math.max(1.2,rad*.38),0,7); ctx.fill();}
+    if(v&&v.ring){ctx.lineWidth=v.rw||2.5; ctx.strokeStyle=v.ring; ctx.beginPath(); ctx.arc(x,y,rad+(v.rw||2.5)+1.5,0,7); ctx.stroke();}
+    if(r.i===hover){ctx.lineWidth=2; ctx.strokeStyle='#1A2540'; ctx.beginPath(); ctx.arc(x,y,rad+3,0,7); ctx.stroke();}
+  }
+  ctx.globalAlpha=1;
+  // rótulos
+  ctx.font='600 11px system-ui,sans-serif'; ctx.textAlign='center'; ctx.lineJoin='round';
+  const showAll=allLabels||s>=34;
+  for(const r of R){
+    const v=view?view.nodes.get(r.i):null;
+    if(!((v&&v.label)||(allLabels&&(!view||v))||(showAll&&!view))) continue;
+    const x=sx(r), y=sy(r)-rad-5; if(x<-80||y<-20||x>W+80||y>H+20) continue;
+    ctx.lineWidth=3.5; ctx.strokeStyle='rgba(255,255,255,.92)'; ctx.strokeText(r.name,x,y);
+    ctx.fillStyle=(view&&!v)?'rgba(68,74,90,.4)':'#1A2540'; ctx.fillText(r.name,x,y);
+  }
+}
+function pick(mx,my){
+  const rad=Math.max(2.6,Math.min(12,cam.s*0.28))+5; let best=-1,bd=rad*rad;
+  for(const r of R){const dx=sx(r)-mx, dy=sy(r)-my, d=dx*dx+dy*dy; if(d<bd){bd=d;best=r.i;}}
+  return best;
+}
+// interação
+const ptrs=new Map(); let dragMoved=false, lastPinch=0;
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,{x:e.offsetX,y:e.offsetY}); dragMoved=false; cv.classList.add('drag');});
+cv.addEventListener('pointermove',e=>{
+  if(ptrs.has(e.pointerId)){
+    const p=ptrs.get(e.pointerId), dx=e.offsetX-p.x, dy=e.offsetY-p.y;
+    if(ptrs.size===1){ if(Math.abs(dx)+Math.abs(dy)>2){dragMoved=true; userMoved=true;} cam.x-=dx/cam.s; cam.y-=dy/cam.s; }
+    p.x=e.offsetX; p.y=e.offsetY;
+    if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y); if(lastPinch) zoomAt((a.x+b.x)/2,(a.y+b.y)/2,d/lastPinch); lastPinch=d; dragMoved=true; }
+    tip.style.display='none'; redraw(); return;
+  }
+  const h=pick(e.offsetX,e.offsetY);
+  if(h!==hover){hover=h; redraw();}
+  if(h>=0){const r=R[h];
+    tip.innerHTML=`<b>${esc(r.name)}</b> <small>#${r.id}</small><br>${esc(r.owner)}${r.owner!==r.rightful?` <small>(legítimo: ${esc(r.rightful)})</small>`:''}${r.capital?`<br><small>Capital de ${esc(r.capital)}</small>`:''}${r.res?`<br><small>Recurso: ${RESN[r.res]||esc(r.res)}</small>`:''}<br><small>${r.nb.length} vizinhos</small>`;
+    tip.style.display='block'; const tx=Math.min(e.offsetX+14,W-270); tip.style.left=tx+'px'; tip.style.top=(e.offsetY+14)+'px';
+  } else tip.style.display='none';
+});
+const endPtr=e=>{ptrs.delete(e.pointerId); lastPinch=0; if(!ptrs.size) cv.classList.remove('drag');};
+cv.addEventListener('pointerup',e=>{const was=ptrs.size===1&&!dragMoved; endPtr(e); if(was){const h=pick(e.offsetX,e.offsetY); if(h>=0) selectRegion(h,false);}});
+cv.addEventListener('pointercancel',endPtr);
+cv.addEventListener('pointerleave',()=>{hover=-1; tip.style.display='none'; redraw();});
+function zoomAt(mx,my,f){ const wx=(mx-W/2)/cam.s+cam.x, wy=(my-H/2)/cam.s+cam.y; cam.s=Math.max(2,Math.min(160,cam.s*f)); cam.x=wx-(mx-W/2)/cam.s; cam.y=wy-(my-H/2)/cam.s; redraw(); }
+cv.addEventListener('wheel',e=>{e.preventDefault(); userMoved=true; zoomAt(e.offsetX,e.offsetY,Math.exp(-e.deltaY*0.0015));},{passive:false});
+document.querySelectorAll('#colorMode button').forEach(b=>b.onclick=()=>{colorMode=b.dataset.m; document.querySelectorAll('#colorMode button').forEach(x=>x.classList.toggle('on',x===b)); legend(); redraw();});
+document.getElementById('bFit').onclick=()=>fit(view&&view.focus);
+document.getElementById('bClear').onclick=()=>{view=null; redraw();};
+document.getElementById('bLabels').onclick=e=>{allLabels=!allLabels; e.target.classList.toggle('on',allLabels); redraw();};
+window.addEventListener('resize',resize); new ResizeObserver(()=>resize()).observe(mainEl);
+
+// legenda
+const legEl=document.getElementById('legend'); let legHidden=mainEl.clientWidth<700;
+function legend(){
+  let body='';
+  if(colorMode==='res'){
+    const cnt={}; R.forEach(r=>cnt[r.res||'']=(cnt[r.res||'']||0)+1);
+    body=Object.keys(RESC).map(k=>`<div class="li" data-res="${k}"><span class="dot" style="background:${RESC[k]}"></span>${RESN[k]}<span class="n">${cnt[k]||0}</span></div>`).join('')+`<div class="li"><span class="dot" style="background:#C9CED8"></span>Sem recurso<span class="n">${cnt['']||0}</span></div>`;
+  } else {
+    const key=colorMode==='owner'?'owner':'rightful', cnt={}; R.forEach(r=>cnt[r[key]]=(cnt[r[key]]||0)+1);
+    body=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b)).map(c=>`<div class="li" data-c="${esc(c)}"><span class="dot" style="background:${COL[c]}"></span>${esc(c)}<span class="n">${cnt[c]}</span></div>`).join('');
+    body+=`<div class="hint" style="margin-top:6px">○ branco = capital · anel externo = ocupada (cor do dono legítimo) · tracejado = fronteira entre países</div>`;
+  }
+  legEl.innerHTML=`<div class="lt" id="legT"><span>Legenda</span><span>${legHidden?'▸':'▾'}</span></div><div class="body">${body}</div>`;
+  legEl.classList.toggle('hide',legHidden);
+  document.getElementById('legT').onclick=()=>{legHidden=!legHidden; legend();};
+}
+legEl.addEventListener('click',e=>{const r=e.target.closest('[data-res]'); if(r){const k=r.dataset.res; const idx=R.filter(x=>x.res===k).map(x=>x.i); view={nodes:new Map(idx.map(i=>[i,{}])),focus:idx}; redraw();}});
+
+// ---------- abas ----------
+const P={reg:document.getElementById('p-reg'),pais:document.getElementById('p-pais'),rota:document.getElementById('p-rota'),front:document.getElementById('p-front'),crit:document.getElementById('p-crit')};
+function tab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t)); Object.entries(P).forEach(([k,el])=>el.classList.toggle('active',k===t)); if(t==='crit') renderCrit(); if(t==='front') renderFront();}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+document.body.addEventListener('click',e=>{
+  const r=e.target.closest('[data-r]'); if(r){e.preventDefault(); selectRegion(+r.dataset.r,true); return;}
+  const c=e.target.closest('[data-c]'); if(c&&!c.closest('.ally')){selectCountry(c.dataset.c); return;}
+});
+const gs=document.getElementById('gsearch');
+gs.addEventListener('change',()=>{const i=findRegion(gs.value); if(i>=0){selectRegion(i,true); gs.value='';}});
+gs.addEventListener('keydown',e=>{if(e.key==='Enter'){const i=findRegion(gs.value); if(i>=0){selectRegion(i,true); gs.value='';}}});
+
+// ---------- Região ----------
+P.reg.innerHTML=`<p class="hint">Clique numa região do mapa ou use a busca no topo. Você verá dono, recurso e todas as regiões com que ela faz fronteira.</p>`;
+function selectRegion(i,doFit){
+  const r=R[i]; tab('reg');
+  const foreign=r.nb.filter(v=>R[v].owner!==r.owner);
+  const cnt={}; r.nb.forEach(v=>cnt[R[v].owner]=(cnt[R[v].owner]||0)+1);
+  const badges=[];
+  if(r.capital) badges.push(`<span class="badge b-pur">Capital de ${esc(r.capital)}</span>`);
+  if(r.owner!==r.rightful) badges.push(`<span class="badge b-bad">Ocupada por ${esc(r.owner)}</span>`);
+  if(foreign.length) badges.push(`<span class="badge b-or">Região de fronteira (${foreign.length} vizinhos estrangeiros)</span>`); else badges.push(`<span class="badge b-ok">Região interna</span>`);
+  if(GLOBAL.ap.has(i)) badges.push(`<span class="badge b-bad">Passagem obrigatória no mapa</span>`);
+  if(terrAP[r.owner]&&terrAP[r.owner].has(i)) badges.push(`<span class="badge b-warn">Chave do território de ${esc(r.owner)}</span>`);
+  const nbs=r.nb.slice().sort((a,b)=>(R[a].owner===r.owner)-(R[b].owner===r.owner)||R[a].owner.localeCompare(R[b].owner)||R[a].name.localeCompare(R[b].name));
+  P.reg.innerHTML=`<div class="card">
+    <div class="rhead"><h2>${esc(r.name)}</h2><span class="id">#${r.id}</span><a class="ext" href="https://primera.e-sim.org/region.html?id=${r.id}" target="_blank" rel="noopener">abrir no jogo ↗</a></div>
+    <div class="badges">${badges.join('')}</div>
+    <div class="kv">
+      <div><small>Dono atual</small>${chip(r.owner)}</div>
+      <div><small>Dono legítimo</small>${chip(r.rightful)}</div>
+      <div><small>Recurso</small>${resB(r.res)}</div>
+      <div><small>População</small><b>${r.pop??'—'}</b></div>
+    </div></div>
+    <h3>Faz fronteira com</h3>
+    <div>${Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).map(c=>chip(c,cnt[c]+(c===r.owner?' (interno)':''))).join('')}</div>
+    <h3>Vizinhos (${r.nb.length})</h3>
+    ${r.nb.length?`<table><tr><th>Região</th><th>Dono (legítimo)</th><th>Recurso</th></tr>${nbs.map(v=>{const n=R[v];return `<tr><td>${rl(v)} ${n.owner!==r.owner?'<span class="tag">estrangeira</span>':''}</td><td>${cdot(n.owner)}${n.owner!==n.rightful?` <span class="hint">(${esc(n.rightful)})</span>`:''}</td><td>${resB(n.res)}</td></tr>`;}).join('')}</table>`:'<p class="hint">Nenhum vizinho — região isolada (não pode ser atacada por fronteira terrestre).</p>'}
+    <div class="row" style="margin-top:12px"><button class="btn sec" id="toRoute">Usar como destino de rota</button><button class="btn sec" id="toCountry">Ver país ${esc(r.owner)}</button></div>`;
+  document.getElementById('toRoute').onclick=()=>{tab('rota'); document.getElementById('rDst').value=`${r.name} #${r.id}`;};
+  document.getElementById('toCountry').onclick=()=>selectCountry(r.owner);
+  const nodes=new Map([[i,{ring:'#7C3AED',rw:3.5,label:true}]]);
+  r.nb.forEach(v=>nodes.set(v,{ring:R[v].owner!==r.owner?'#EA580C':'#2563EB',label:true}));
+  view={nodes,edges:r.nb.map(v=>[i,v,R[v].owner!==r.owner?'#EA580C':'#2563EB',2.5]),focus:[i,...r.nb]};
+  if(doFit) fit(view.focus,90); else redraw();
+}
+
+// ---------- País ----------
+const cOpts=`<optgroup label="Com território">${owners.map(c=>`<option value="${esc(c)}">${esc(c)} (${ownCount[c]})</option>`).join('')}</optgroup><optgroup label="Sem território atual">${allC.filter(c=>!ownCount[c]).sort().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</optgroup>`;
+P.pais.innerHTML=`<div class="row"><select id="cSel"><option value="">Escolha um país…</option>${cOpts}</select></div><div id="cOut"><p class="hint">Mostra as regiões do país, os países vizinhos, os alvos atacáveis (regiões estrangeiras que fazem fronteira) e as regiões-ponte do território.</p></div>`;
+document.getElementById('cSel').onchange=e=>{if(e.target.value) selectCountry(e.target.value);};
+function selectCountry(c){
+  tab('pais'); document.getElementById('cSel').value=c;
+  const own=R.filter(r=>r.owner===c).map(r=>r.i), ownS=new Set(own);
+  const targets=new Map(), borderOwn=new Map(), nc={};
+  own.forEach(u=>R[u].nb.forEach(v=>{ if(ownS.has(v)) return;
+    if(!targets.has(v)) targets.set(v,new Set()); targets.get(v).add(u);
+    if(!borderOwn.has(u)) borderOwn.set(u,new Set()); borderOwn.get(u).add(R[v].owner);
+    nc[R[v].owner]=(nc[R[v].owner]||0)+1; }));
+  const comps=own.length?components(own):[];
+  const occ=own.filter(i=>R[i].rightful!==c), lost=R.filter(r=>r.rightful===c&&r.owner!==c).map(r=>r.i);
+  const caps=own.filter(i=>R[i].capital), ap=terrAP[c]||new Set();
+  const byOwner={}; [...targets.keys()].forEach(v=>(byOwner[R[v].owner]=byOwner[R[v].owner]||[]).push(v));
+  const ordOw=Object.keys(byOwner).sort((a,b)=>byOwner[b].length-byOwner[a].length);
+  const tRes=[...targets.keys()].filter(v=>R[v].res).length;
+  let h=`<div class="card"><div class="rhead"><h2>${cdot(c)}</h2></div>
+   <div class="stats"><div><b>${own.length}</b><small>regiões</small></div><div><b>${targets.size}</b><small>alvos atacáveis</small></div><div><b>${Object.keys(nc).length}</b><small>países vizinhos</small></div>
+   <div><b>${borderOwn.size}</b><small>regiões de fronteira</small></div><div><b>${comps.length}</b><small>bloco(s) de território</small></div><div><b>${occ.length}/${lost.length}</b><small>ocupa / perdeu</small></div></div>
+   ${own.length?`<div class="verdict">${esc(c)} pode atacar <b>${targets.size}</b> regiões de <b>${ordOw.length}</b> países${tRes?` (${tRes} com recurso)`:''}. ${comps.length>1?`O território está dividido em <b>${comps.length}</b> blocos sem ligação entre si.`:'O território é contínuo.'} ${ap.size?`<b>${ap.size}</b> região(ões) internas, se perdidas, partem o território.`:''}</div>`:`<div class="verdict">${esc(c)} não tem território hoje. ${lost.length} regiões legítimas estão com outros países.</div>`}
+  </div>`;
+  if(own.length){
+    h+=`<h3>Países vizinhos (nº de fronteiras)</h3><div>${Object.keys(nc).sort((a,b)=>nc[b]-nc[a]).map(o=>chip(o,nc[o])).join('')}</div>`;
+    h+=`<h3>Alvos atacáveis (${targets.size})</h3><table><tr><th>Região alvo</th><th>Recurso</th><th>Atacável a partir de</th></tr>`;
+    ordOw.forEach(o=>{h+=`<tr class="grp"><td colspan="3">${cdot(o)} — ${byOwner[o].length}</td></tr>`;
+      byOwner[o].sort((a,b)=>R[a].name.localeCompare(R[b].name)).forEach(v=>{h+=`<tr><td>${rl(v)}${R[v].rightful!==o?` <span class="hint">(legít. ${esc(R[v].rightful)})</span>`:''}${R[v].capital?' <span class="badge b-pur">capital</span>':''}</td><td>${resB(R[v].res)}</td><td>${[...targets.get(v)].map(rl).join(', ')}</td></tr>`;});});
+    h+=`</table>`;
+    h+=`<h3>Regiões de fronteira / pontes (${borderOwn.size})</h3><p class="hint">Regiões de ${esc(c)} que encostam em outro país — é por elas que o país ataca e é atacado.</p><table><tr><th>Região</th><th>Encosta em</th></tr>${[...borderOwn.keys()].sort((a,b)=>borderOwn.get(b).size-borderOwn.get(a).size||R[a].name.localeCompare(R[b].name)).map(u=>`<tr><td>${rl(u)}${ap.has(u)?' <span class="badge b-warn">chave</span>':''}</td><td>${[...borderOwn.get(u)].map(o=>cdot(o)).join(' &nbsp;')}</td></tr>`).join('')}</table>`;
+    if(ap.size) h+=`<h3>Regiões-chave do território (${ap.size})</h3><p class="hint">Se ${esc(c)} perder uma destas, o território se divide em partes desconectadas.</p><div>${[...ap].map(i=>{const parts=components(own,i);return `${rl(i)} <span class="hint">(separa ${parts.slice(1).reduce((s,p)=>s+p.length,0)} regiões)</span>`;}).join('<br>')}</div>`;
+    if(comps.length>1) h+=`<h3>Blocos do território</h3>${comps.map((p,k)=>`<div style="margin-bottom:4px"><b>Bloco ${k+1}</b> (${p.length}): ${p.slice(0,12).map(rl).join(', ')}${p.length>12?'…':''}</div>`).join('')}`;
+    if(occ.length) h+=`<h3>Regiões que ${esc(c)} ocupa de outros (${occ.length})</h3><div>${occ.map(i=>`${rl(i)} <span class="hint">(${esc(R[i].rightful)})</span>`).join(', ')}</div>`;
+    if(caps.length) h+=`<h3>Capitais em seu poder</h3><div>${caps.map(i=>`${rl(i)} <span class="hint">(capital de ${esc(R[i].capital)})</span>`).join(', ')}</div>`;
+  }
+  if(lost.length) h+=`<h3>Regiões legítimas perdidas (${lost.length})</h3><div>${lost.map(i=>`${rl(i)} <span class="hint">(com ${esc(R[i].owner)})</span>`).join(', ')}</div>`;
+  h+=`<div class="row" style="margin-top:12px"><button class="btn sec" id="cRoute">Ver alcance de ${esc(c)}</button></div>`;
+  document.getElementById('cOut').innerHTML=h;
+  document.getElementById('cRoute').onclick=()=>{tab('rota'); setOrigin('pais',c); runReach();};
+  const nodes=new Map();
+  own.forEach(i=>nodes.set(i,ap.has(i)?{ring:'#E0A800',rw:2.5}:{}));
+  lost.forEach(i=>nodes.set(i,{ring:'#7C3AED',rw:2}));
+  targets.forEach((_,v)=>nodes.set(v,{ring:'#EA580C',rw:2.5,label:targets.size<=60}));
+  const es=[]; targets.forEach((s,v)=>s.forEach(u=>es.push([u,v,'#EA580C',2])));
+  view={nodes,edges:es,focus:[...own,...targets.keys(),...lost]};
+  fit(view.focus);
+}
+
+// ---------- Rota ----------
+P.rota.innerHTML=`
+ <p class="hint">Calcule o caminho de conquista até uma região. "Menos conquistas" conta só as regiões que precisam ser tomadas (as do seu lado e dos aliados são de graça).</p>
+ <div class="row"><label>Origem</label><span class="seg" id="oType"><button data-t="pais" class="on">País</button><button data-t="reg">Região</button></span></div>
+ <div class="row" id="oPaisRow"><label></label><select id="oPais"><option value="">País de origem…</option>${cOpts}</select></div>
+ <div class="row" id="oRegRow" style="display:none"><label></label><input list="regList" id="oReg" placeholder="Região de origem…"></div>
+ <div class="row" id="allyRow"><label>Aliados</label><select id="allySel"><option value="">+ adicionar aliado…</option>${cOpts}</select></div>
+ <div class="row ally" id="allies"></div>
+ <div class="row"><label>Destino</label><input list="regList" id="rDst" placeholder="Região de destino…"></div>
+ <div class="row"><label>Critério</label><span class="seg" id="rMode"><button data-m="conq" class="on">Menos conquistas</button><button data-m="hops">Menos saltos</button></span></div>
+ <div class="row"><label></label><button class="btn" id="rGo">Calcular rota</button><button class="btn sec" id="rReach">Mapa de alcance</button></div>
+ <div id="rOut"></div>`;
+let oType='pais', rMode='conq', allies=new Set();
+const oPaisRow=document.getElementById('oPaisRow'), oRegRow=document.getElementById('oRegRow'), allyRow=document.getElementById('allyRow'), alliesEl=document.getElementById('allies');
+function setOType(t){oType=t; document.querySelectorAll('#oType button').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); oPaisRow.style.display=t==='pais'?'':'none'; oRegRow.style.display=t==='reg'?'':'none';}
+function setOrigin(t,v){setOType(t); if(t==='pais') document.getElementById('oPais').value=v; else document.getElementById('oReg').value=v;}
+document.querySelectorAll('#oType button').forEach(b=>b.onclick=()=>setOType(b.dataset.t));
+document.querySelectorAll('#rMode button').forEach(b=>b.onclick=()=>{rMode=b.dataset.m; document.querySelectorAll('#rMode button').forEach(x=>x.classList.toggle('on',x===b));});
+function drawAllies(){alliesEl.innerHTML=[...allies].map(c=>`<span class="chip" data-ally="${esc(c)}"><i style="background:${COL[c]}"></i>${esc(c)}<span class="x">×</span></span>`).join('');}
+document.getElementById('allySel').onchange=e=>{if(e.target.value){allies.add(e.target.value); e.target.value=''; drawAllies();}};
+alliesEl.addEventListener('click',e=>{const c=e.target.closest('[data-ally]'); if(c){allies.delete(c.dataset.ally); drawAllies();}});
+function originInfo(){
+  if(oType==='pais'){const c=document.getElementById('oPais').value; if(!c) return {err:'Escolha o país de origem.'};
+    const side=new Set([c,...allies]); const src=R.filter(r=>side.has(r.owner)).map(r=>r.i);
+    if(!src.length) return {err:`${c} e aliados não têm território.`}; return {src,side,label:[c,...allies].join(' + ')};}
+  const i=findRegion(document.getElementById('oReg').value); if(i<0) return {err:'Região de origem não encontrada.'};
+  const side=new Set([R[i].owner,...allies]); return {src:[i],side,label:R[i].name};
+}
+document.getElementById('rGo').onclick=()=>{
+  const o=originInfo(), out=document.getElementById('rOut'); if(o.err){out.innerHTML=`<p class="badge b-bad">${esc(o.err)}</p>`; return;}
+  const t=findRegion(document.getElementById('rDst').value); if(t<0){out.innerHTML=`<p class="badge b-bad">Região de destino não encontrada.</p>`; return;}
+  const {dist,prev}=dijkstra(o.src,o.side,rMode);
+  if(!isFinite(dist[t])){out.innerHTML=`<div class="verdict">Sem caminho terrestre até ${esc(R[t].name)}.</div>`; view=null; redraw(); return;}
+  const path=[]; for(let u=t;u>=0;u=prev[u]) path.unshift(u);
+  const conq=path.slice(1).filter(u=>!o.side.has(R[u].owner)).length, hops=path.length-1;
+  out.innerHTML=`<div class="verdict">De <b>${esc(o.label)}</b> até <b>${esc(R[t].name)}</b>: <b>${conq}</b> região(ões) a conquistar em <b>${hops}</b> saltos.</div>
+   <ol class="path">${path.map((u,k)=>`<li>${rl(u)} — ${cdot(R[u].owner)} ${k===0?'<span class="tag own">ponto de partida</span>':o.side.has(R[u].owner)?'<span class="tag own">já é seu/aliado</span>':'<span class="tag">conquistar</span>'} ${resB(R[u].res)}</li>`).join('')}</ol>`;
+  const nodes=new Map(); path.forEach((u,k)=>nodes.set(u,{ring:k===0?'#1B9E4B':u===t?'#7C3AED':o.side.has(R[u].owner)?'#2563EB':'#EA580C',rw:3,label:true}));
+  const es=[]; for(let k=1;k<path.length;k++) es.push([path[k-1],path[k],'#7C3AED',3.5]);
+  view={nodes,edges:es,focus:path}; fit(path,90);
+};
+const HEAT=['#1A2540','#C62828','#EA580C','#E0A800','#1B9E4B','#2563EB','#8B92A4'];
+function runReach(){
+  const o=originInfo(), out=document.getElementById('rOut'); if(o.err){out.innerHTML=`<p class="badge b-bad">${esc(o.err)}</p>`; return;}
+  const {dist}=dijkstra(o.src,o.side,'conq');
+  // custo = 1001 por região conquistada + 1 por salto em território próprio (<1000), logo nível = floor(d/1001)
+  const lev=R.map(r=>{const d=dist[r.i]; return isFinite(d)?Math.floor(d/1001):-1;});
+  const cnt={}; lev.forEach(k=>{k=Math.min(k,6); cnt[k]=(cnt[k]||0)+1;});
+  const nodes=new Map(); lev.forEach((k,i)=>{if(k>=0) nodes.set(i,{fill:HEAT[Math.min(k,6)],label:k===1&&(cnt[1]||0)<=60});});
+  const one=lev.map((k,i)=>k===1?i:-1).filter(i=>i>=0);
+  out.innerHTML=`<div class="verdict">Alcance de <b>${esc(o.label)}</b>: cor = nº de conquistas necessárias para chegar à região.</div>
+   <div style="margin-top:8px">${Object.keys(cnt).filter(k=>k>=0).sort((a,b)=>a-b).map(k=>`<div class="li"><span class="dot" style="background:${HEAT[Math.min(k,6)]}"></span> ${k==0?'território próprio/aliado':k==1?'1 conquista (fronteira direta)':k==6?'6+ conquistas':k+' conquistas'} — <b>${cnt[k]}</b></div>`).join('')}${cnt[-1]?`<div class="hint">Inalcançáveis: ${cnt[-1]}</div>`:''}</div>
+   <h3>Fronteira direta (${one.length})</h3><div>${one.sort((a,b)=>R[a].owner.localeCompare(R[b].owner)).map(i=>`${rl(i)} <span class="hint">(${esc(R[i].owner)})</span>`).join(', ')}</div>`;
+  view={nodes,edges:null,focus:R.filter((r,i)=>lev[i]>=0&&lev[i]<=2).map(r=>r.i)}; fit(view.focus);
+}
+document.getElementById('rReach').onclick=runReach;
+
+// ---------- Fronteiras entre países ----------
+const PAIRS=new Map();
+edges.forEach(([a,b])=>{const A=R[a].owner,B=R[b].owner; if(A===B) return; const [x,y,ia,ib]=A<B?[A,B,a,b]:[B,A,b,a]; const k=x+'|'+y; if(!PAIRS.has(k)) PAIRS.set(k,{a:x,b:y,list:[]}); PAIRS.get(k).list.push([ia,ib]);});
+let frontDone=false;
+function renderFront(){
+  if(frontDone) return; frontDone=true;
+  const occ={}; R.filter(r=>r.owner!==r.rightful).forEach(r=>(occ[r.owner]=occ[r.owner]||[]).push(r.i));
+  P.front.innerHTML=`<p class="hint">Cada par de países que se encosta, com a lista de regiões-ponte (região de A ↔ região de B). Clique para ver no mapa.</p>
+   <div class="row"><input type="text" id="fFilter" placeholder="Filtrar por país…"></div>
+   <div class="hint" id="fCount"></div><div id="fList" style="margin-top:6px"></div>
+   <h3>Regiões ocupadas (dono ≠ legítimo)</h3>${Object.keys(occ).sort((a,b)=>occ[b].length-occ[a].length).map(o=>`<div style="margin-bottom:6px">${chip(o,occ[o].length)}<br>${occ[o].map(i=>`${rl(i)} <span class="hint">(${esc(R[i].rightful)})</span>`).join(', ')}</div>`).join('')}
+   <h3>Exportar</h3><div class="row"><button class="btn sec" id="dlR">CSV de regiões</button><button class="btn sec" id="dlE">CSV de fronteiras</button></div>`;
+  const list=[...PAIRS.values()].sort((x,y)=>y.list.length-x.list.length);
+  const fl=document.getElementById('fList');
+  function paint(){const q=document.getElementById('fFilter').value.trim().toLowerCase();
+    const L=list.filter(p=>!q||p.a.toLowerCase().includes(q)||p.b.toLowerCase().includes(q));
+    document.getElementById('fCount').textContent=`${L.length} pares de países vizinhos · ${L.reduce((s,p)=>s+p.list.length,0)} fronteiras`;
+    fl.innerHTML=L.map(p=>`<div class="pair" data-k="${esc(p.a+'|'+p.b)}"><div class="ph"><span class="dot" style="background:${COL[p.a]}"></span>${esc(p.a)} ↔ <span class="dot" style="background:${COL[p.b]}"></span>${esc(p.b)}<span class="cnt">${p.list.length}</span></div><div class="pb"><table><tr><th>${esc(p.a)}</th><th>${esc(p.b)}</th></tr>${p.list.map(([x,y])=>`<tr><td>${rl(x)}</td><td>${rl(y)}</td></tr>`).join('')}</table></div></div>`).join('');}
+  document.getElementById('fFilter').oninput=paint; paint();
+  fl.addEventListener('click',e=>{ if(e.target.closest('[data-r]')) return; const el=e.target.closest('.pair'); if(!el) return;
+    const open=!el.classList.contains('open'); fl.querySelectorAll('.pair.open').forEach(x=>x.classList.remove('open')); if(!open){view=null; redraw(); return;}
+    el.classList.add('open'); const p=PAIRS.get(el.dataset.k); const nodes=new Map();
+    R.forEach(r=>{if(r.owner===p.a||r.owner===p.b) nodes.set(r.i,{});});
+    p.list.forEach(([x,y])=>{nodes.set(x,{ring:'#EA580C',label:true}); nodes.set(y,{ring:'#EA580C',label:true});});
+    view={nodes,edges:p.list.map(([x,y])=>[x,y,'#EA580C',3]),focus:p.list.flat()}; fit(view.focus,90);});
+  const csv=rows=>rows.map(r=>r.map(v=>{v=String(v??''); return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(';')).join('\r\n');
+  const dl=(name,text)=>{const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+text],{type:'text/csv;charset=utf-8'})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
+  document.getElementById('dlR').onclick=()=>dl('esim_regioes.csv',csv([['id','regiao','dono_atual','dono_legitimo','capital_de','recurso','populacao','n_vizinhos','vizinhos_ids'],...R.map(r=>[r.id,r.name,r.owner,r.rightful,r.capital||'',r.res||'',r.pop??'',r.nb.length,r.nb.map(v=>R[v].id).join(' ')])]));
+  document.getElementById('dlE').onclick=()=>dl('esim_fronteiras.csv',csv([['id_a','regiao_a','dono_a','id_b','regiao_b','dono_b','entre_paises'],...edges.map(([a,b])=>[R[a].id,R[a].name,R[a].owner,R[b].id,R[b].name,R[b].owner,R[a].owner!==R[b].owner?'sim':'nao'])]));
+}
+
+// ---------- Pontos críticos ----------
+let critDone=false;
+function renderCrit(){
+  if(critDone) return; critDone=true;
+  const apList=[...GLOBAL.ap].map(i=>{const parts=components(ALL.filter(x=>R[x].nb.length),i); const cut=parts.slice(1).flat(); return {i,cut};}).sort((a,b)=>b.cut.length-a.cut.length);
+  const brList=GLOBAL.br.map(([u,v])=>{const parts=components(ALL.filter(x=>R[x].nb.length),-1,[u,v]); return {u,v,cut:parts.slice(1).flat()};}).sort((a,b)=>b.cut.length-a.cut.length);
+  const frag=owners.map(c=>({c,parts:components(R.filter(r=>r.owner===c).map(r=>r.i))})).filter(x=>x.parts.length>1).sort((a,b)=>b.parts.length-a.parts.length);
+  const iso=R.filter(r=>!r.nb.length);
+  const own=list=>{const cnt={}; list.forEach(i=>cnt[R[i].owner]=(cnt[R[i].owner]||0)+1); return Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).map(c=>`${esc(c)} ${cnt[c]}`).join(', ');};
+  window._crit={apList,brList,frag};
+  P.crit.innerHTML=`<p class="hint">Análise do grafo inteiro. Uma <b>passagem obrigatória</b> é uma região sem a qual parte do mapa fica sem ligação por terra. Uma <b>ponte única</b> é uma fronteira que é o único caminho entre dois lados do mapa.</p>
+   <h3>Pontes únicas (${brList.length})</h3>
+   ${brList.length?`<table><tr><th>Fronteira</th><th>Isola</th></tr>${brList.map((b,k)=>`<tr><td><a class="rg" data-br="${k}">${esc(R[b.u].name)} ↔ ${esc(R[b.v].name)}</a></td><td>${b.cut.length} região(ões)<br><span class="hint">${own(b.cut)}</span></td></tr>`).join('')}</table>`:'<p class="hint">Nenhuma.</p>'}
+   <h3>Passagens obrigatórias (${apList.length})</h3>
+   <table><tr><th>Região</th><th>Dono</th><th>Sem ela, isola</th></tr>${apList.map((a,k)=>`<tr><td><a class="rg" data-ap="${k}">${esc(R[a.i].name)}</a></td><td>${cdot(R[a.i].owner)}</td><td>${a.cut.length} <span class="hint">${own(a.cut)}</span></td></tr>`).join('')}</table>
+   <h3>Territórios fragmentados (${frag.length})</h3>
+   ${frag.map(f=>`<div style="margin-bottom:4px">${chip(f.c)} <span class="hint">${f.parts.length} blocos: ${f.parts.map(p=>p.length).join(' + ')}</span></div>`).join('')||'<p class="hint">Nenhum.</p>'}
+   <h3>Regiões isoladas (sem vizinhos)</h3>${iso.map(r=>`${rl(r.i)} <span class="hint">(${esc(r.owner)})</span>`).join(', ')||'<p class="hint">Nenhuma.</p>'}`;
+  P.crit.addEventListener('click',e=>{
+    const a=e.target.closest('[data-ap]'), b=e.target.closest('[data-br]');
+    if(a){const x=apList[+a.dataset.ap]; const nodes=new Map([[x.i,{ring:'#C62828',rw:4,label:true}]]); x.cut.forEach(i=>nodes.set(i,{ring:'#EA580C',label:x.cut.length<=40})); R[x.i].nb.forEach(v=>{if(!nodes.has(v)) nodes.set(v,{label:true});});
+      view={nodes,edges:R[x.i].nb.map(v=>[x.i,v,'#C62828',2.5]),focus:[x.i,...x.cut,...R[x.i].nb]}; fit(view.focus,90);}
+    if(b){const x=brList[+b.dataset.br]; const nodes=new Map([[x.u,{ring:'#C62828',rw:4,label:true}],[x.v,{ring:'#C62828',rw:4,label:true}]]); x.cut.forEach(i=>{if(!nodes.has(i)) nodes.set(i,{ring:'#EA580C',label:x.cut.length<=40});});
+      view={nodes,edges:[[x.u,x.v,'#C62828',4]],focus:[x.u,x.v,...x.cut]}; fit(view.focus,90);}
+  });
+}
+
+// ---------- início ----------
+legend(); resize(); fit(ALL,30);
+</script>
+</body>
+</html>
