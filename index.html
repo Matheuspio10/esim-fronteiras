@@ -260,7 +260,7 @@ function draw(){
     const v=view?view.nodes.get(r.i):null;
     ctx.globalAlpha=(view&&!v)?0.16:1;
     ctx.beginPath(); ctx.arc(x,y,rad,0,7); ctx.fillStyle=(v&&v.fill)||nodeColor(r); ctx.fill();
-    if(colorMode==='owner'&&r.owner!==r.rightful&&rad>4.5&&!(v&&v.fill)){ctx.lineWidth=2; ctx.strokeStyle=COL[r.rightful]; ctx.beginPath(); ctx.arc(x,y,rad+2,0,7); ctx.stroke();}
+    if(colorMode==='owner'&&r.owner!==r.rightful&&rad>4.5&&!(v&&v.fill)&&!(view&&view.noOcc)){ctx.lineWidth=2; ctx.strokeStyle=COL[r.rightful]; ctx.beginPath(); ctx.arc(x,y,rad+2,0,7); ctx.stroke();}
     if(r.capital){ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(x,y,Math.max(1.2,rad*.38),0,7); ctx.fill();}
     if(v&&v.ring){ctx.lineWidth=v.rw||2.5; ctx.strokeStyle=v.ring; ctx.beginPath(); ctx.arc(x,y,rad+(v.rw||2.5)+1.5,0,7); ctx.stroke();}
     if(r.i===hover){ctx.lineWidth=2; ctx.strokeStyle='#1A2540'; ctx.beginPath(); ctx.arc(x,y,rad+3,0,7); ctx.stroke();}
@@ -417,9 +417,10 @@ function selectCountry(c){
     if(caps.length) h+=`<h3>Capitais em seu poder</h3><div>${caps.map(i=>`${rl(i)} <span class="hint">(capital de ${esc(R[i].capital)})</span>`).join(', ')}</div>`;
   }
   if(lost.length) h+=`<h3>Regiões legítimas perdidas (${lost.length})</h3><p><a class="rg" data-ocgo="${esc(c)}" data-m="perdeu">Ver cada uma com suas regiões-ponte →</a></p><div>${lost.map(i=>`${rl(i)} <span class="hint">(com ${esc(R[i].owner)})</span>`).join(', ')}</div>`;
-  h+=`<div class="row" style="margin-top:12px"><button class="btn sec" id="cRoute">Ver alcance de ${esc(c)}</button></div>`;
+  h+=`<div class="row" style="margin-top:12px"><button class="btn sec" id="cRoute">Ver alcance de ${esc(c)}</button>${occ.length?`<button class="btn" id="cBridge" style="background:#C62828;border-color:#C62828">Mapear Regiões-Ponte</button>`:''}</div>`;
   document.getElementById('cOut').innerHTML=h;
   document.getElementById('cRoute').onclick=()=>{tab('rota'); setOrigin('pais',c); runReach();};
+  const cb=document.getElementById('cBridge'); if(cb) cb.onclick=()=>{ocBridgeOn=true; openOcup('ocupa',c);};
   const nodes=new Map();
   own.forEach(i=>nodes.set(i,ap.has(i)?{ring:'#E0A800',rw:2.5}:{}));
   lost.forEach(i=>nodes.set(i,{ring:'#7C3AED',rw:2}));
@@ -578,7 +579,7 @@ function ocView(list){
 }
 function renderOcup(){
   const out=document.getElementById('ocOut'), c=ocC;
-  try{history.replaceState(null,'',c?'#'+ocMode+'='+encodeURIComponent(c):location.pathname);}catch(e){}
+  try{history.replaceState(null,'',c?'#'+(ocMode==='ocupa'&&ocBridgeOn?'pontes':ocMode)+'='+encodeURIComponent(c):location.pathname);}catch(e){}
   if(!c){out.innerHTML=''; ocRegs=[]; return;}
   const regs=R.filter(r=>r.owner!==r.rightful&&ocKey(r)===c).map(r=>r.i), inRegs=new Set(regs); ocRegs=regs;
   if(!regs.length){out.innerHTML=`<div class="verdict">${ocMode==='ocupa'?`${esc(c)} não domina nenhuma região de outro país.`:`Nenhuma região legítima de ${esc(c)} está com outro país.`}</div>`; view=null; redraw(); return;}
@@ -598,13 +599,13 @@ function renderOcup(){
   const bOrder=Object.keys(bByOwner).sort((a,b)=>(b===c)-(a===c)||bByOwner[b].length-bByOwner[a].length||a.localeCompare(b)).filter(o=>!(ocHideOwn&&o===c));
   const n=regs.length, g=gOrder.length;
   let h=`<div class="card"><div class="rhead"><h2>${cdot(c)}</h2><button class="btn sec" id="ocCopy" style="margin-left:auto">Copiar lista</button></div>
-   <div class="row" style="margin-top:8px"><button class="btn" id="ocRW">⬇ Baixar links para abrir RW (.txt)</button><a class="rg" id="ocRWh" style="font-size:12px">ou versão .html com links clicáveis</a></div>
+   <div class="row" style="margin-top:8px">${ocMode==='ocupa'?'<button class="btn" id="ocBr" style="background:#C62828;border-color:#C62828">Mapear Regiões-Ponte</button>':''}<button class="btn" id="ocRW">⬇ Baixar links para abrir RW (.txt)</button><a class="rg" id="ocRWh" style="font-size:12px">ou versão .html com links clicáveis</a></div>
    <p class="hint" style="margin:2px 0 0">Todas as ${n} regiões abaixo estão com dono atual ≠ dono legítimo, ou seja, são as que podem receber RW. Confira na página da região no jogo se já não há uma batalha em andamento.</p>
    <div class="stats"><div><b>${n}</b><small>${ocMode==='ocupa'?'regiões ocupadas':'regiões perdidas'}</small></div><div><b>${g}</b><small>${ocMode==='ocupa'?'donos legítimos':'países ocupantes'}</small></div><div><b>${flagged}</b><small>${ocMode==='ocupa'?'na linha de frente':`com fronteira com ${esc(c)}`}</small></div></div>
    <div class="verdict">${ocMode==='ocupa'
      ?`${esc(c)} domina <b>${n}</b> regiões que não são legitimamente suas, de <b>${g}</b> países. <b>${flagged}</b> estão na linha de frente (encostam em outro país); ${n-flagged} estão cercadas só por território de ${esc(c)}.`
      :`<b>${n}</b> regiões legítimas de ${esc(c)} estão com <b>${g}</b> país(es). ${ownCount[c]?`${esc(c)} faz fronteira com <b>${flagged}</b> delas e pode atacar direto; ${n-flagged} exigem conquistar o caminho antes.`:`${esc(c)} não tem nenhuma região hoje, então não faz fronteira com nenhuma delas.`}`}</div>
-   <p class="hint" style="margin:8px 0 0">Clique numa região para focá-la no mapa. Pílulas: <span class="pill f"><i class="dot" style="background:#EA580C"></i>outro país</span><span class="pill ${ocMode==='ocupa'?'o':'c'}"><i class="dot" style="background:${COL[c]}"></i>${esc(c)}</span> <a class="rg" id="ocAll">ver todas no mapa</a></p></div>`;
+   <p class="hint" style="margin:8px 0 0">Clique numa região para focá-la no mapa. Pílulas: <span class="pill f"><i class="dot" style="background:#EA580C"></i>outro país</span><span class="pill ${ocMode==='ocupa'?'o':'c'}"><i class="dot" style="background:${COL[c]}"></i>${esc(c)}</span> <a class="rg" id="ocAll">ver todas no mapa</a></p></div><div id="ocBrOut"></div>`;
   gOrder.forEach(k=>{
     h+=`<h3>${ocMode==='ocupa'?'Legítimas de':'Ocupadas por'} ${cdot(k)} (${groups[k].length})</h3>`;
     groups[k].sort((a,b)=>R[a].name.localeCompare(R[b].name)).forEach(i=>{const L=nbList(i);
@@ -638,9 +639,67 @@ function renderOcup(){
     function fallback(){const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); ok();}catch(_){} ta.remove();}
     if(navigator.clipboard&&window.isSecureContext) navigator.clipboard.writeText(txt).then(ok,fallback); else fallback();
   };
-  view=ocView(regs); fit(view.focus);
+  const brBtn=document.getElementById('ocBr');
+  if(brBtn) brBtn.onclick=()=>{ocBridgeOn=!ocBridgeOn; renderOcup(); if(ocBridgeOn) document.getElementById('ocBrOut').scrollIntoView({behavior:'smooth',block:'start'});};
+  if(ocMode==='ocupa'&&ocBridgeOn) renderBridges(); else {view=ocView(regs); fit(view.focus);}
+}
+// ---------- Regiões-ponte ----------
+// core = regiões que o país controla e são dele por direito. Uma região do país é ponte quando, sem ela,
+// alguma região conquistada (hoje ligada ao core) fica sem caminho por território do país até qualquer região core.
+let ocBridgeOn=false, brData=null;
+function bridgeAnalysis(c){
+  const own=R.filter(r=>r.owner===c).map(r=>r.i), core=own.filter(i=>R[i].rightful===c), conq=own.filter(i=>R[i].rightful!==c);
+  const reach=skip=>{const seen=new Uint8Array(N), q=[]; core.forEach(i=>{if(i!==skip){seen[i]=1; q.push(i);}});
+    for(let k=0;k<q.length;k++) for(const v of R[q[k]].nb) if(!seen[v]&&v!==skip&&R[v].owner===c){seen[v]=1; q.push(v);}
+    return seen;};
+  const base=reach(-1), orphan=conq.filter(i=>!base[i]), bridges=[];
+  own.forEach(b=>{const s=reach(b); const lost=conq.filter(i=>i!==b&&base[i]&&!s[i]); if(lost.length) bridges.push({b,lost});});
+  bridges.sort((x,y)=>y.lost.length-x.lost.length||R[x.b].name.localeCompare(R[y.b].name));
+  return {core,conq,orphan,bridges};
+}
+function brBaseNodes(c){const nodes=new Map(); R.forEach(r=>{if(r.owner===c) nodes.set(r.i,r.rightful===c?{ring:'#1B9E4B',rw:2}:{});}); return nodes;}
+function brAllView(){
+  const A=brData, c=ocC, nodes=brBaseNodes(c);
+  A.orphan.forEach(i=>nodes.set(i,{ring:'#7C3AED',rw:2.5}));
+  A.bridges.forEach(x=>nodes.set(x.b,{ring:'#C62828',rw:Math.min(5,2+Math.log2(1+x.lost.length)),label:true}));
+  P.ocup.querySelectorAll('.brg').forEach(x=>{x.classList.remove('sel'); x.querySelector('.brl').style.display='none';});
+  view={nodes,edges:null,focus:[...nodes.keys()],noOcc:true}; fit(view.focus);
+}
+function brOne(k){
+  const x=brData.bridges[k], c=ocC, nodes=brBaseNodes(c), link=R[x.b].nb.filter(v=>R[v].owner===c);
+  x.lost.forEach(i=>nodes.set(i,{ring:'#EA580C',rw:3,label:x.lost.length<=25}));
+  nodes.set(x.b,{ring:'#C62828',rw:4.5,label:true});
+  view={nodes,edges:link.map(v=>[x.b,v,'#C62828',3]),focus:[x.b,...x.lost,...link],noOcc:true}; fit(view.focus,90);
+}
+function renderBridges(){
+  const out=document.getElementById('ocBrOut'), btn=document.getElementById('ocBr'); if(!out) return;
+  if(btn) btn.textContent='Fechar Regiões-Ponte';
+  const c=ocC, A=bridgeAnalysis(c); brData=A;
+  const front=i=>R[i].nb.some(v=>R[v].owner!==c);
+  let h=`<div class="card" style="margin-top:10px;border-color:#E8A0A0;background:#FFF8F8">
+   <div class="rhead"><h2 style="font-size:16px">Regiões-ponte de ${esc(c)}</h2><a class="rg" id="brAll" style="margin-left:auto;font-size:12px">ver todas no mapa</a></div>`;
+  if(!A.core.length){
+    out.innerHTML=h+`<div class="verdict" style="background:#FCEBEB;border-color:#C62828">${esc(c)} não controla nenhuma região que seja sua por direito, então não há core para medir a conexão: as ${A.conq.length} regiões conquistadas já estão todas sem core.</div></div>`;
+    document.getElementById('brAll').onclick=()=>{view=ocView(ocRegs); fit(view.focus);}; view=ocView(ocRegs); fit(view.focus); return;}
+  const top=A.bridges[0];
+  h+=`<div class="stats"><div><b>${A.bridges.length}</b><small>regiões-ponte</small></div><div><b>${A.core.length}</b><small>regiões core</small></div><div><b>${A.conq.length}</b><small>conquistadas</small></div></div>
+   <div class="verdict" style="background:#FCEBEB;border-color:#C62828">${A.bridges.length
+     ?`<b>${A.bridges.length}</b> região(ões) de ${esc(c)} são o único caminho entre conquistas e o core. A mais crítica é <b>${esc(R[top.b].name)}</b>: se cair, <b>${top.lost.length}</b> região(ões) conquistada(s) ficam sem ligação com o core.`
+     :`Nenhuma região-ponte: toda região conquistada tem mais de um caminho por território de ${esc(c)} até o core.`}${A.orphan.length?` <b>${A.orphan.length}</b> conquistada(s) já estão sem ligação com o core hoje.`:''}</div>
+   <p class="hint" style="margin:8px 0 6px">No mapa: <b style="color:#C62828">vermelho</b> = região-ponte (anel mais grosso = mais regiões dependem dela) · <b style="color:#1B9E4B">verde</b> = core${A.orphan.length?' · <b style="color:#7C3AED">roxo</b> = já sem ligação':''}. Clique numa região-ponte para ver o que se desconecta se ela cair.</p>`;
+  h+=A.bridges.map((x,k)=>`<div class="oc brg" data-brg="${k}" style="cursor:pointer"><div class="t"><b>${esc(R[x.b].name)}</b>${R[x.b].rightful===c?'<span class="badge b-ok">core</span>':`<span class="badge b-blue">conquistada de ${esc(R[x.b].rightful)}</span>`}${front(x.b)?'<span class="badge b-or">linha de frente</span>':''}<span class="badge b-bad" style="margin-left:auto">desconecta ${x.lost.length}</span></div>
+     <div class="nbs brl" style="display:none"><span class="hint">Se ${esc(R[x.b].name)} cair, ficam sem ligação com o core (${x.lost.length}):</span><br>${x.lost.map(i=>`<span class="pill f" data-oc="${i}" title="legítima de ${esc(R[i].rightful)}"><i class="dot" style="background:${COL[R[i].rightful]}"></i>${esc(R[i].name)}</span>`).join('')}</div></div>`).join('');
+  if(A.orphan.length) h+=`<h3>Já sem ligação com o core (${A.orphan.length})</h3><div>${A.orphan.map(i=>`<span class="pill" data-oc="${i}" title="legítima de ${esc(R[i].rightful)}"><i class="dot" style="background:${COL[R[i].rightful]}"></i>${esc(R[i].name)}</span>`).join('')}</div>`;
+  out.innerHTML=h+'</div>';
+  document.getElementById('brAll').onclick=brAllView;
+  brAllView();
 }
 P.ocup.addEventListener('click',e=>{
+  const bg=e.target.closest('[data-brg]');
+  if(bg&&!e.target.closest('[data-oc]')){const open=!bg.classList.contains('sel');
+    if(!open){brAllView(); return;}
+    P.ocup.querySelectorAll('.oc.sel').forEach(x=>{x.classList.remove('sel'); const l=x.querySelector('.brl'); if(l) l.style.display='none';});
+    bg.classList.add('sel'); bg.querySelector('.brl').style.display=''; brOne(+bg.dataset.brg); return;}
   const el=e.target.closest('[data-oc]'); if(!el) return; const i=+el.dataset.oc;
   P.ocup.querySelectorAll('.oc.sel').forEach(x=>x.classList.remove('sel'));
   if(ocRegs.includes(i)){const card=P.ocup.querySelector(`.oc[data-oci="${i}"]`); if(card) card.classList.add('sel'); view=ocView([i]);}
@@ -651,7 +710,7 @@ ocOptions();
 
 // ---------- início ----------
 legend(); resize(); fit(ALL,30);
-(function(){const m=location.hash.match(/^#(ocupa|perdeu)=(.+)$/); if(m){const c=decodeURIComponent(m[2]); if(allC.includes(c)) openOcup(m[1],c);}})();
+(function(){const m=location.hash.match(/^#(ocupa|perdeu|pontes)=(.+)$/); if(m){const c=decodeURIComponent(m[2]); if(allC.includes(c)){ if(m[1]==='pontes') ocBridgeOn=true; openOcup(m[1]==='pontes'?'ocupa':m[1],c);}}})();
 </script>
 </body>
 </html>
